@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Wordle — Game-Z</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root{--bg:#07080f;--surface:#0d1117;--card:#111722;--border:#1e2a3a;--accent:#00e5ff;--accent2:#ff3cac;--text:#e8f0fe;--muted:#6b7a99;--green:#538d4e;--yellow:#b59f3b;--grey:#3a3a3c}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center}
+  .gz-nav{width:100%;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;background:rgba(7,8,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  .gz-logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none}
+  .gz-back{display:flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;border:1px solid var(--border);padding:6px 16px;border-radius:100px;transition:color 0.2s,border-color 0.2s}
+  .gz-back:hover{color:var(--accent);border-color:rgba(0,229,255,0.4)}
+  .gz-back::before{content:'←';font-size:14px}
+  .gz-game-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px}
+  .gz-wrap{width:100%;max-width:480px;padding:24px 16px 48px;display:flex;flex-direction:column;align-items:center;flex:1;gap:16px}
+  /* GRID */
+  .grid{display:flex;flex-direction:column;gap:6px}
+  .grid-row{display:flex;gap:6px}
+  .tile{width:58px;height:58px;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;transition:border-color 0.1s,background 0.3s,transform 0.1s;user-select:none}
+  .tile.filled{border-color:#565758;animation:tilePop 0.08s ease-out}
+  @keyframes tilePop{0%{transform:scale(0.9)}100%{transform:scale(1)}}
+  .tile.flip{animation:flip 0.5s ease forwards}
+  @keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(-90deg)}100%{transform:rotateX(0)}}
+  .tile.correct{background:var(--green);border-color:var(--green);color:#fff}
+  .tile.present{background:var(--yellow);border-color:var(--yellow);color:#fff}
+  .tile.absent {background:var(--grey); border-color:var(--grey); color:#fff}
+  .tile.shake{animation:shake 0.4s ease}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+  /* KEYBOARD */
+  .keyboard{display:flex;flex-direction:column;gap:6px;align-items:center;width:100%}
+  .kb-row{display:flex;gap:4px;justify-content:center}
+  .kb-key{height:56px;min-width:38px;padding:0 6px;border-radius:6px;background:#1e2a3a;border:none;color:var(--text);font-family:'Outfit',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:background 0.2s;display:flex;align-items:center;justify-content:center;user-select:none}
+  .kb-key:hover{background:#28384a}
+  .kb-key.wide{min-width:56px;font-size:11px}
+  .kb-key.correct{background:var(--green);color:#fff}
+  .kb-key.present{background:var(--yellow);color:#fff}
+  .kb-key.absent {background:var(--grey); color:#fff}
+  /* status / toast */
+  .toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#e8f0fe;color:#07080f;font-weight:700;font-size:14px;padding:10px 24px;border-radius:100px;opacity:0;transition:opacity 0.2s;z-index:999;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1}
+  .status-msg{font-size:14px;color:var(--muted);min-height:20px;text-align:center}
+  /* new game btn */
+  .gz-btn{padding:9px 22px;border-radius:100px;border:none;background:linear-gradient(135deg,var(--accent),#0090b5);color:#000;font-weight:700;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;transition:box-shadow 0.2s,transform 0.15s}
+  .gz-btn:hover{box-shadow:0 0 20px rgba(0,229,255,0.4);transform:translateY(-1px)}
+  .gz-btn-ghost{padding:9px 22px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:border-color 0.2s,color 0.2s}
+  .gz-btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+  /* legend */
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--muted)}
+  .legend-item{display:flex;align-items:center;gap:5px}
+  .legend-dot{width:12px;height:12px;border-radius:3px}
+</style>
+</head>
+<body>
+  <div style="position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,229,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none"></div>
+  <div class="toast" id="toast"></div>
+
+  <nav class="gz-nav" style="position:relative;z-index:100">
+    <a href="../index.html" class="gz-logo">Game‑Z</a>
+    <span class="gz-game-title">Wordle</span>
+    <a href="../index.html" class="gz-back">All Games</a>
+  </nav>
+
+  <div class="gz-wrap" style="position:relative;z-index:1">
+    <h1 style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;color:var(--accent)">Wordle</h1>
+    <div style="font-size:13px;color:var(--muted);text-align:center">Guess the 5-letter word in 6 tries</div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Correct</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Wrong spot</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--grey)"></div>Not in word</div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="status-msg" id="statusMsg"></div>
+
+    <div class="keyboard" id="keyboard"></div>
+
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="gz-btn" onclick="newGame()">↺ New Word</button>
+      <button class="gz-btn-ghost" onclick="showHint()">💡 Hint</button>
+    </div>
+  </div>
+
+<script>
+const WORDS = [
+  'FLAME','BRAVE','CRISP','GLOBE','PHASE','PLANK','SWEET','SHOUT','STORM','GRIND',
+  'FLICK','JUMPY','PIXEL','QUEST','RISKY','SLOPE','TRICK','ULTRA','VIVID','WITCH',
+  'XENON','YACHT','ZONAL','ABODE','BLAZE','CHIME','DRIFT','ELBOW','FLOCK','GRIME',
+  'HATCH','IVORY','JOUST','KNELT','LAPSE','MAGIC','NINJA','OXIDE','PRISM','QUOTA',
+  'RELAY','SMASH','THUMB','UDDER','VAPOR','WALTZ','EXERT','YIELD','ZONES','ACTOR',
+  'BLEND','CLOCK','DEPOT','ELEGY','FERRY','GHOST','HONEY','INDEX','JEWEL','KELP',
+  'LIVID','MANOR','NASTY','OCHRE','PLUMB','QUIRK','ROVER','SCOUT','THYME','UNIFY',
+  'VOICE','WOKEN','XYLAN','YEARN','ZESTY','ALBUM','BRISK','CRUST','DADDY','EPOCH',
+  'FAIRY','GRASP','HOIST','INNER','JELLY','KNIFE','LEMON','MIRTH','NAVAL','OPTIC',
+  'PIZZA','QUEEN','RABBI','SQUAD','TULIP','UNCUT','VISOR','WRIST','OXIDE','FUNGI'
+];
+
+const VALID_EXTRA = ['ABOUT','ABOVE','ABUSE','ACTOR','ACUTE','ADMIT','ADOPT','ADULT','AFTER','AGAIN','AGENT','AGREE','AHEAD','ALLOW','ALONE','ALONG','ALPHA','ALTAR','ANGEL','ANGRY','ANIME','ANNEX','APPLE','APPLY','ARENA','ARGUE','ARISE','ARISE','ARMED','AROMA','ARRAY','ARROW','ASIDE','ASSET','ATTIC','AUDIO','AUDIT','AVOID','AWAKE','AWARD','AWFUL','BASIC','BASIS','BATCH','BEACH','BEGAN','BEGIN','BEING','BELOW','BENCH','BIRTH','BLACK','BLADE','BLANK','BLAST','BLEAT','BLEED','BLESS','BLIND','BLOCK','BLOOD','BLOOM','BLOWN','BOARD','BOOST','BOOTH','BOUND','BOXER','BRAIN','BRAND','BREAK','BREED','BRICK','BRING','BROAD','BROKE','BROOK','BROWN','BRUSH','BUILD','BUILT','BURST','BUYER','CABIN','CABLE','CAMEL','CANDY','CARGO','CARRY','CATCH','CAUSE','CEDAR','CHAIN','CHALK','CHAMP','CHAOS','CHARM','CHART','CHASE','CHEAP','CHECK','CHEEK','CHESS','CHICK','CHILD','CHOSE','CIVIC','CIVIL','CLAIM','CLAMP','CLASH','CLEAR','CLIMB','CLING','CLONE','CLOSE','CLOTH','CLOUD','COACH','COAST','COBRA','COMBO','COMIC','COMMA','CORAL','COUNT','COURT','COVER','CRAFT','CRANE','CRASH','CRAZY','CREAM','CREEK','CREED','CROSS','CROWD','CROWN','CRUDE','CRUSH','CURVE','CYCLE'];
+
+const ALL_VALID = new Set([...WORDS, ...VALID_EXTRA]);
+
+let secret='', guesses=[], current='', gameOver=false, hintUsed=false;
+
+function newGame(){
+  secret=WORDS[Math.floor(Math.random()*WORDS.length)];
+  guesses=[]; current=''; gameOver=false; hintUsed=false;
+  document.getElementById('statusMsg').textContent='';
+  buildGrid(); buildKeyboard();
+}
+
+function buildGrid(){
+  const g=document.getElementById('grid');
+  g.innerHTML='';
+  for(let r=0;r<6;r++){
+    const row=document.createElement('div'); row.className='grid-row'; row.id='row-'+r;
+    for(let c=0;c<5;c++){
+      const t=document.createElement('div'); t.className='tile'; t.id=`t${r}${c}`;
+      row.appendChild(t);
+    }
+    g.appendChild(row);
+  }
+}
+
+function buildKeyboard(){
+  const rows=['QWERTYUIOP','ASDFGHJKL','↵ZXCVBNM⌫'];
+  const kb=document.getElementById('keyboard'); kb.innerHTML='';
+  rows.forEach(rowStr=>{
+    const row=document.createElement('div'); row.className='kb-row';
+    rowStr.split('').forEach(k=>{
+      const btn=document.createElement('button'); btn.className='kb-key';
+      if(k==='↵'||k==='⌫') btn.classList.add('wide');
+      btn.textContent=k; btn.dataset.key=k;
+      btn.addEventListener('click',()=>handleKey(k));
+      row.appendChild(btn);
+    });
+    kb.appendChild(row);
+  });
+}
+
+function handleKey(k){
+  if(gameOver) return;
+  if(k==='⌫'||k==='Backspace'){ if(current.length>0){ current=current.slice(0,-1); updateCurrentRow(); } return; }
+  if(k==='↵'||k==='Enter'){ submitGuess(); return; }
+  if(/^[A-Z]$/.test(k) && current.length<5){ current+=k; updateCurrentRow(); }
+}
+
+function updateCurrentRow(){
+  const r=guesses.length;
+  for(let c=0;c<5;c++){
+    const t=document.getElementById(`t${r}${c}`);
+    t.textContent=current[c]||'';
+    t.classList.toggle('filled',!!current[c]);
+  }
+}
+
+function submitGuess(){
+  if(current.length<5){ shakeRow(guesses.length); showToast('Not enough letters'); return; }
+  if(!ALL_VALID.has(current)){ shakeRow(guesses.length); showToast('Not in word list'); return; }
+  const result=evaluate(current, secret);
+  const r=guesses.length;
+  result.forEach((res,c)=>{
+    const t=document.getElementById(`t${r}${c}`);
+    setTimeout(()=>{ t.classList.add('flip'); setTimeout(()=>t.classList.add(res),250); },c*100);
+  });
+  // update keyboard after last flip
+  setTimeout(()=>updateKeyboard(current,result), 5*100+300);
+  guesses.push(current);
+  const won=result.every(x=>x==='correct');
+  setTimeout(()=>{
+    if(won){ gameOver=true; showToast(['Genius!','Magnificent!','Impressive!','Splendid!','Great!','Phew!'][guesses.length-1]||'Nice!',3000); document.getElementById('statusMsg').textContent=`🎉 You got it in ${guesses.length}!`; }
+    else if(guesses.length>=6){ gameOver=true; showToast(secret,4000); document.getElementById('statusMsg').textContent=`The word was: ${secret}`; }
+  }, 700);
+  current='';
+}
+
+function evaluate(guess, answer){
+  const result=Array(5).fill('absent');
+  const ansArr=[...answer], used=Array(5).fill(false);
+  // correct pass
+  for(let i=0;i<5;i++) if(guess[i]===ansArr[i]){ result[i]='correct'; used[i]=true; ansArr[i]=null; }
+  // present pass
+  for(let i=0;i<5;i++){
+    if(result[i]==='correct') continue;
+    const idx=ansArr.indexOf(guess[i]);
+    if(idx!==-1 && !used[idx]){ result[i]='present'; used[idx]=true; ansArr[idx]=null; }
+  }
+  return result;
+}
+
+function updateKeyboard(guess,result){
+  const priority={correct:3,present:2,absent:1};
+  guess.split('').forEach((ch,i)=>{
+    const btn=document.querySelector(`.kb-key[data-key="${ch}"]`);
+    if(!btn) return;
+    const cur=btn.classList.contains('correct')?3:btn.classList.contains('present')?2:btn.classList.contains('absent')?1:0;
+    if(priority[result[i]]>cur){ btn.classList.remove('correct','present','absent'); btn.classList.add(result[i]); }
+  });
+}
+
+function shakeRow(r){
+  const row=document.getElementById('row-'+r);
+  row.classList.add('shake'); row.addEventListener('animationend',()=>row.classList.remove('shake'),{once:true});
+}
+
+let toastTimer;
+function showToast(msg,dur=1800){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+function showHint(){
+  if(gameOver){ showToast('Game is over!'); return; }
+  if(hintUsed){ showToast('Hint already used this round'); return; }
+  hintUsed=true;
+  // reveal one random unknown letter's position
+  const known=new Set(guesses.flatMap(g=>[...g]));
+  const unknown=[...secret].filter(ch=>!known.has(ch));
+  if(unknown.length){
+    const ch=unknown[Math.floor(Math.random()*unknown.length)];
+    showToast(`Hint: The letter "${ch}" is in the word`,3000);
+  } else {
+    showToast(`Hint: Word is ${secret.slice(0,1)}${'?'.repeat(4)}`,3000);
+  }
+}
+
+window.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey) return;
+  if(e.key==='Enter') handleKey('↵');
+  else if(e.key==='Backspace') handleKey('⌫');
+  else if(/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
+});
+
+newGame();
+</script>
+</body>
+</html>

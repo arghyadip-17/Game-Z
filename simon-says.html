@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- gz --><title>Simon Says — Game-Z</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap');
+  :root{
+    --bg:#07080f;--surface:#0d1117;--card:#111722;--border:#1e2a3a;
+    --accent:#00e5ff;--accent2:#ff3cac;--accent3:#f7c948;
+    --text:#e8f0fe;--muted:#6b7a99;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* NAV BAR */
+  .gz-nav {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 60px;
+    background: rgba(7,8,15,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    flex-shrink: 0;
+  }
+  .gz-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+  }
+  .gz-back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--muted); text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    transition: color 0.2s;
+    border: 1px solid var(--border);
+    padding: 6px 16px; border-radius: 100px;
+  }
+  .gz-back:hover { color: var(--accent); border-color: rgba(0,229,255,0.4); }
+  .gz-back::before { content: '←'; font-size: 14px; }
+  .gz-game-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 2px; color: var(--text);
+  }
+  /* GAME WRAP */
+  .gz-wrap {
+    width: 100%; max-width: 1000px;
+    padding: 28px 24px 40px;
+    display: flex; flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+  /* BUTTON STYLE */
+  .gz-btn {
+    padding: 9px 22px; border-radius: 100px; border: none;
+    background: linear-gradient(135deg, var(--accent) 0%, #0090b5 100%);
+    color: #000; font-weight: 700; font-size: 13px;
+    cursor: pointer; letter-spacing: 0.5px;
+    font-family: 'Outfit', sans-serif;
+    transition: box-shadow 0.2s, transform 0.15s;
+  }
+  .gz-btn:hover { box-shadow: 0 0 20px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  .gz-btn-ghost {
+    padding: 9px 22px; border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .gz-btn-ghost:hover { border-color: rgba(0,229,255,0.4); color: var(--accent); }
+  /* SCORE / HUD */
+  .gz-hud {
+    display: flex; gap: 16px; align-items: center;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 100px; padding: 8px 24px;
+    margin-bottom: 20px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .gz-hud-item { font-size: 14px; font-weight: 600; }
+  .gz-hud-item span { color: var(--accent); }
+  /* CONTROLS BAR */
+  .gz-controls {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    justify-content: center; margin-top: 16px;
+  }
+  /* SELECT */
+  select {
+    padding: 8px 14px; border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--card); color: var(--text);
+    font-family: 'Outfit', sans-serif; font-size: 13px;
+    cursor: pointer;
+  }
+  /* HINT */
+  .gz-hint {
+    margin-top: 12px;
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 0.5px; text-align: center;
+  }
+  /* CANVAS */
+  canvas {
+    border-radius: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+    display: block;
+  }
+  /* BACKGROUND */
+  .gz-bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+/* ── GAME STYLES ── */
+
+  /* ── Game-Z Global Overrides ── */
+  body {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    font-family: 'Outfit', system-ui, sans-serif !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  button {
+    font-family: 'Outfit', system-ui, sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  button:not([class]) {
+    padding: 9px 22px; border-radius: 100px; border: none;
+    background: linear-gradient(135deg, #00e5ff 0%, #0090b5 100%);
+    color: #000; font-weight: 700; font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  button:not([class]):hover { box-shadow: 0 0 20px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  input[type="number"], input[type="text"] {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+  select {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 100px;
+    padding: 8px 14px;
+    font-family: 'Outfit', system-ui, sans-serif;
+    cursor: pointer;
+  }
+  /* Fix body padding for individual game pages */
+  body > *:not(.gz-bg-grid):not(.gz-nav) { position: relative; z-index: 1; }
+
+
+  body{font-family:system-ui;background:#061126;color:#e6eef8;display:flex;flex-direction:column;align-items:center;padding:18px}
+  h1{color:#7dd3fc}
+  .grid{display:grid;grid-template-columns:repeat(2,140px);gap:14px;margin:18px}
+  .pad{width:140px;height:140px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;cursor:pointer;box-shadow:inset 0 -6px 12px rgba(0,0,0,0.35)}
+  .g0{background:#22c55e} .g1{background:#f59e0b} .g2{background:#ef4444} .g3{background:#3b82f6}
+  .controls{display:flex;gap:8px;align-items:center}
+  button{padding:8px;border-radius:8px;border:none;background:#0369a1;color:white}
+  .info{margin-top:12px;color:#9fb3c8}
+  @media (max-width:520px){ .grid{grid-template-columns:repeat(2,110px)} .pad{width:110px;height:110px} }
+</style>
+</head>
+<body>
+
+  <div class="gz-bg-grid"></div>
+  <nav class="gz-nav">
+    <a href="../index.html" class="gz-logo">Game‑Z</a>
+    <span class="gz-game-title">Simon Says</span>
+    <a href="../index.html" class="gz-back">All Games</a>
+  </nav>
+
+  <h1 style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;color:var(--accent);margin:20px 0 12px">Simon Says</h1>
+  <div class="controls">
+    <button id="start">Start</button>
+    <button id="strict">Strict: Off</button>
+    <div style="width:12px"></div>
+    <div class="info" id="info">Score: 0</div>
+  </div>
+
+  <div id="pads" class="grid" aria-label="simon pads">
+    <div class="pad g0" data-i="0"></div>
+    <div class="pad g1" data-i="1"></div>
+    <div class="pad g2" data-i="2"></div>
+    <div class="pad g3" data-i="3"></div>
+  </div>
+
+<script>
+(() => {
+  const pads = Array.from(document.querySelectorAll('.pad'));
+  const startBtn = document.getElementById('start');
+  const strictBtn = document.getElementById('strict');
+  const info = document.getElementById('info');
+  let sequence = [], playerSeq = [], playing=false, strict=false, score=0;
+
+  function flashPad(i, ms=400){
+    const el = pads[i];
+    const orig = el.style.filter;
+    el.style.filter = 'brightness(140%)';
+    setTimeout(()=> el.style.filter = orig, ms);
+  }
+
+  function playSequence(){
+    playing = true;
+    let i = 0;
+    const t = setInterval(() => {
+      flashPad(sequence[i]);
+      i++;
+      if (i >= sequence.length) { clearInterval(t); playing=false; }
+    }, 600);
+  }
+
+  function nextRound(){
+    sequence.push(Math.floor(Math.random()*4));
+    playerSeq = [];
+    score = sequence.length - 1;
+    info.textContent = 'Score: '+score;
+    playSequence();
+  }
+
+  pads.forEach((p, idx) => {
+    p.addEventListener('click', () => {
+      if (playing || sequence.length===0) return;
+      flashPad(idx, 200);
+      playerSeq.push(idx);
+      const pos = playerSeq.length - 1;
+      if (playerSeq[pos] !== sequence[pos]){
+        // wrong
+        if (strict){
+          alert('Wrong! Starting over'); sequence = []; score=0; info.textContent='Score: 0'; nextRound();
+        } else {
+          alert('Wrong! Try again');
+          playerSeq = [];
+          playSequence();
+        }
+      } else {
+        if (playerSeq.length === sequence.length){
+          // correct round
+          setTimeout(()=> nextRound(), 700);
+        }
+      }
+    });
+  });
+
+  startBtn.addEventListener('click', () => {
+    sequence = []; playerSeq=[]; score=0; info.textContent='Score: 0'; nextRound();
+  });
+  strictBtn.addEventListener('click', () => {
+    strict = !strict;
+    strictBtn.textContent = 'Strict: ' + (strict ? 'On' : 'Off');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- gz --><title>Chess — Game-z</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap');
+  :root{
+    --bg:#07080f;--surface:#0d1117;--card:#111722;--border:#1e2a3a;
+    --accent:#00e5ff;--accent2:#ff3cac;--accent3:#f7c948;
+    --text:#e8f0fe;--muted:#6b7a99;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* NAV BAR */
+  .gz-nav {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 60px;
+    background: rgba(7,8,15,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    flex-shrink: 0;
+  }
+  .gz-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+  }
+  .gz-back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--muted); text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    transition: color 0.2s;
+    border: 1px solid var(--border);
+    padding: 6px 16px; border-radius: 100px;
+  }
+  .gz-back:hover { color: var(--accent); border-color: rgba(0,229,255,0.4); }
+  .gz-back::before { content: '←'; font-size: 14px; }
+  .gz-game-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 2px; color: var(--text);
+  }
+  /* GAME WRAP */
+  .gz-wrap {
+    width: 100%; max-width: 1000px;
+    padding: 28px 24px 40px;
+    display: flex; flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+  /* BUTTON STYLE */
+  .gz-btn {
+    padding: 9px 22px; border-radius: 100px; border: none;
+    background: linear-gradient(135deg, var(--accent) 0%, #0090b5 100%);
+    color: #000; font-weight: 700; font-size: 13px;
+    cursor: pointer; letter-spacing: 0.5px;
+    font-family: 'Outfit', sans-serif;
+    transition: box-shadow 0.2s, transform 0.15s;
+  }
+  .gz-btn:hover { box-shadow: 0 0 20px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  .gz-btn-ghost {
+    padding: 9px 22px; border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .gz-btn-ghost:hover { border-color: rgba(0,229,255,0.4); color: var(--accent); }
+  /* SCORE / HUD */
+  .gz-hud {
+    display: flex; gap: 16px; align-items: center;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 100px; padding: 8px 24px;
+    margin-bottom: 20px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .gz-hud-item { font-size: 14px; font-weight: 600; }
+  .gz-hud-item span { color: var(--accent); }
+  /* CONTROLS BAR */
+  .gz-controls {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    justify-content: center; margin-top: 16px;
+  }
+  /* SELECT */
+  select {
+    padding: 8px 14px; border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--card); color: var(--text);
+    font-family: 'Outfit', sans-serif; font-size: 13px;
+    cursor: pointer;
+  }
+  /* HINT */
+  .gz-hint {
+    margin-top: 12px;
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 0.5px; text-align: center;
+  }
+  /* CANVAS */
+  canvas {
+    border-radius: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+    display: block;
+  }
+  /* BACKGROUND */
+  .gz-bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+/* ── GAME STYLES ── */
+
+  /* ── Game-Z Global Overrides ── */
+  body {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    font-family: 'Outfit', system-ui, sans-serif !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  button {
+    font-family: 'Outfit', system-ui, sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  button:not([class]) {
+    padding: 9px 22px; border-radius: 100px; border: none;
+    background: linear-gradient(135deg, #00e5ff 0%, #0090b5 100%);
+    color: #000; font-weight: 700; font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  button:not([class]):hover { box-shadow: 0 0 20px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  input[type="number"], input[type="text"] {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+  select {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 100px;
+    padding: 8px 14px;
+    font-family: 'Outfit', system-ui, sans-serif;
+    cursor: pointer;
+  }
+  /* Fix body padding for individual game pages */
+  body > *:not(.gz-bg-grid):not(.gz-nav) { position: relative; z-index: 1; }
+
+
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;background:#061126;color:#e6eef8;display:flex;flex-direction:column;align-items:center;padding:20px}
+    h1{color:#7dd3fc;margin-bottom:8px}
+    .board{display:grid;grid-template-columns:repeat(8,56px);grid-template-rows:repeat(8,56px);gap:0;border-radius:8px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+    .cell{width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;user-select:none;position:relative;transition:background 0.12s, transform 0.12s}
+    .cell.light{background:#f0d9b5;color:#111}
+    .cell.dark{background:#b58863;color:#111}
+    .cell.selected{outline:3px solid rgba(16,185,129,0.95);transform:translateY(-4px)}
+    .cell.dest{box-shadow: inset 0 0 0 4px rgba(59,130,246,0.25)}
+    .cell.path::after{
+      content: '';
+      position:absolute; inset:0; border-radius:6px;
+      background: linear-gradient(90deg, rgba(14,165,233,0.14), rgba(59,130,246,0.08));
+      pointer-events:none;
+    }
+    .info{margin-top:12px}
+    .controls{margin-top:10px;display:flex;gap:8px;align-items:center}
+    button{padding:8px 10px;border-radius:8px;border:none;background:#0369a1;color:white;cursor:pointer}
+    select{padding:6px;border-radius:6px;border:1px solid #123;background:#092033;color:#e6eef8}
+    .small{font-size:13px;padding:6px 8px}
+    .status{margin-top:8px;color:#cfe7ff}
+    .muted{color:#9fb3c8;font-size:13px}
+  </style>
+</head>
+<body>
+
+  <div class="gz-bg-grid"></div>
+  <nav class="gz-nav">
+    <a href="../index.html" class="gz-logo">Game‑Z</a>
+    <span class="gz-game-title">Chess</span>
+    <a href="../index.html" class="gz-back">All Games</a>
+  </nav>
+
+  <h1 style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;color:var(--accent);margin:20px 0 16px">Chess</h1>
+
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+    <label class="muted">Play mode:
+      <select id="mode">
+        <option value="2p">2-player (local)</option>
+        <option value="ai">Vs Computer</option>
+      </select>
+    </label>
+    <button onclick="resetBoard()">Restart</button>
+    <button onclick="flipBoard()">Flip Board</button>
+    <button class="small" onclick="showRules()">Rules (short)</button>
+  </div>
+
+  <div id="board" class="board" role="grid" aria-label="Chess board"></div>
+
+  <div class="info">
+    <div>Turn: <span id="turn">White</span></div>
+    <div class="status" id="status"></div>
+  </div>
+
+<script>
+/*
+Updated Chess (client-side)
+- Two modes: 2-player or vs simple AI.
+- AI chooses capture moves first, otherwise a random legal move.
+- On selecting a piece: legal destination squares highlighted (.dest).
+- Hovering a destination shows the path between source and destination (.path).
+- Clicking destination performs move; AI moves after player's move when in AI mode.
+- No castling/en-passant; pawn auto-promotes to queen; king-capture ends game.
+*/
+
+const PIECE_UNICODE = {
+  'w': { 'k':'♔','q':'♕','r':'♖','b':'♗','n':'♘','p':'♙' },
+  'b': { 'k':'♚','q':'♛','r':'♜','b':'♝','n':'♞','p':'♟' }
+};
+
+let boardState = [];
+let selected = null;
+let turn = 'w';
+let flipped = false;
+let thinking = false; // AI thinking
+const boardEl = document.getElementById('board');
+const turnEl = document.getElementById('turn');
+const statusEl = document.getElementById('status');
+const modeEl = document.getElementById('mode');
+
+function initBoard(){
+  boardState = Array.from({length:8}, ()=> Array(8).fill(null));
+  const backRank = ['r','n','b','q','k','b','n','r'];
+  for (let c=0;c<8;c++){
+    boardState[0][c] = {type: backRank[c], color:'b'};
+    boardState[1][c] = {type: 'p', color:'b'};
+    boardState[6][c] = {type: 'p', color:'w'};
+    boardState[7][c] = {type: backRank[c], color:'w'};
+  }
+  selected = null; turn = 'w'; thinking = false;
+  render();
+  statusEl.textContent = '';
+}
+
+function render(){
+  boardEl.innerHTML = '';
+  const coords = generateCoords();
+  coords.forEach(([r,c])=>{
+    const cell = document.createElement('div');
+    cell.className = 'cell ' + (((r + c) % 2 === 0) ? 'light' : 'dark');
+    cell.dataset.r = r; cell.dataset.c = c;
+    const piece = boardState[r][c];
+    if (piece) cell.textContent = PIECE_UNICODE[piece.color][piece.type];
+    cell.addEventListener('click', onCellClick);
+    boardEl.appendChild(cell);
+  });
+  // reapply selection/destinations if any
+  if (selected) highlightSelectionAndDestinations(selected.r, selected.c);
+  turnEl.textContent = (turn === 'w' ? 'White' : turn === 'b' ? 'Black' : '—');
+}
+
+function generateCoords(){
+  const arr=[];
+  if (!flipped) for (let r=0;r<8;r++) for (let c=0;c<8;c++) arr.push([r,c]);
+  else for (let r=7;r>=0;r--) for (let c=7;c>=0;c--) arr.push([r,c]);
+  return arr;
+}
+
+function onCellClick(e){
+  if (thinking) return;
+  const r = Number(e.currentTarget.dataset.r);
+  const c = Number(e.currentTarget.dataset.c);
+  const piece = boardState[r][c];
+
+  if (!selected){
+    if (!piece){ statusEl.textContent = 'Select a piece.'; return; }
+    if (piece.color !== turn){ statusEl.textContent = 'Select a piece of your color.'; return; }
+    selected = {r,c};
+    highlightSelectionAndDestinations(r,c);
+    statusEl.textContent = '';
+  } else {
+    // If clicking another of own pieces, change selection
+    if (piece && piece.color === turn){
+      selected = {r,c};
+      highlightSelectionAndDestinations(r,c);
+      statusEl.textContent = '';
+      return;
+    }
+    // Try to move selected -> clicked square
+    if (selected.r === r && selected.c === c){
+      selected = null; render(); return;
+    }
+    const from = selected;
+    const to = {r,c};
+    if (isValidMove(from, to, turn)){
+      performMove(from,to);
+      selected = null;
+      render();
+      // If AI mode and it's AI's turn, trigger AI
+      if (modeEl.value === 'ai' && turn && ((turn === 'b'))) {
+        setTimeout(aiMove, 250);
+      }
+    } else {
+      statusEl.textContent = 'Invalid move.';
+    }
+  }
+}
+
+function highlightSelectionAndDestinations(sr, sc){
+  // clear all highlights
+  boardEl.querySelectorAll('.cell').forEach(cell => {
+    cell.classList.remove('selected','dest','path');
+    cell.onmouseenter = null; cell.onmouseleave = null; cell.onclick = null;
+    // reattach click (needed because we removed listeners earlier by re-render)
+    cell.addEventListener('click', onCellClick);
+  });
+  // mark selected
+  const selCell = boardEl.querySelector(`.cell[data-r="${sr}"][data-c="${sc}"]`);
+  if (selCell) selCell.classList.add('selected');
+
+  // find legal destinations
+  const moves = [];
+  for (let r=0;r<8;r++){
+    for (let c=0;c<8;c++){
+      if (sr===r && sc===c) continue;
+      if (isValidMove({r:sr,c:sc},{r,c}, turn)) moves.push({r,c});
+    }
+  }
+
+  // decorate destination cells
+  moves.forEach(({r,c})=>{
+    const dest = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    if (!dest) return;
+    dest.classList.add('dest');
+    // on hover show path
+    dest.onmouseenter = ()=> showPathPreview({r:sr,c:sc},{r,c});
+    dest.onmouseleave = ()=> clearPathPreview();
+    // clicking a dest should move (we already handle click on cell globally; no need override)
+  });
+}
+
+function showPathPreview(from, to){
+  clearPathPreview();
+  const pathCells = getPathCells(from, to);
+  pathCells.forEach(({r,c})=>{
+    const el = boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    if (el) el.classList.add('path');
+  });
+}
+
+function clearPathPreview(){
+  boardEl.querySelectorAll('.cell.path').forEach(el => el.classList.remove('path'));
+}
+
+// perform move and handle promotion/king capture
+function performMove(from, to){
+  const moving = boardState[from.r][from.c];
+  const target = boardState[to.r][to.c];
+  boardState[to.r][to.c] = moving;
+  boardState[from.r][from.c] = null;
+
+  // pawn promotion
+  if (moving.type === 'p'){
+    if ((moving.color==='w' && to.r===0) || (moving.color==='b' && to.r===7)){
+      moving.type = 'q';
+      statusEl.textContent = (moving.color==='w' ? 'White' : 'Black') + ' pawn promoted to Queen!';
+    }
+  }
+
+  // capture king => end game
+  if (target && target.type === 'k'){
+    statusEl.textContent = (moving.color==='w' ? 'White' : 'Black') + ' captured the king! Game over.';
+    turn = null; render();
+    return;
+  }
+
+  // switch turn
+  turn = (turn === 'w') ? 'b' : 'w';
+  render();
+}
+
+// === Move validation (same logic as before) ===
+function isValidMove(from, to, playerColor){
+  if (turn !== playerColor) return false;
+  const piece = boardState[from.r][from.c];
+  if (!piece || piece.color !== playerColor) return false;
+  const target = boardState[to.r][to.c];
+  if (target && target.color === playerColor) return false;
+  const dr = to.r - from.r, dc = to.c - from.c;
+  switch(piece.type){
+    case 'p': return validatePawn(from,to,piece);
+    case 'r': return validateRook(from,to);
+    case 'n': return validateKnight(dr,dc);
+    case 'b': return validateBishop(from,to);
+    case 'q': return validateQueen(from,to);
+    case 'k': return validateKing(dr,dc);
+    default: return false;
+  }
+}
+
+function validatePawn(from, to, piece){
+  const dir = (piece.color === 'w') ? -1 : 1;
+  const startRow = (piece.color === 'w') ? 6 : 1;
+  const dr = to.r - from.r, dc = to.c - from.c;
+  const target = boardState[to.r][to.c];
+  if (dc === 0){
+    if (dr === dir && !target) return true;
+    if (from.r === startRow && dr === 2*dir && !target){
+      const midR = from.r + dir;
+      if (!boardState[midR][from.c]) return true;
+    }
+    return false;
+  } else if (Math.abs(dc) === 1 && dr === dir){
+    if (target && target.color !== piece.color) return true;
+    return false;
+  }
+  return false;
+}
+
+function validateRook(from,to){
+  const dr = to.r - from.r, dc = to.c - from.c;
+  if (dr !== 0 && dc !== 0) return false;
+  return isPathClear(from,to);
+}
+
+function validateBishop(from,to){
+  const dr = Math.abs(to.r - from.r), dc = Math.abs(to.c - from.c);
+  if (dr !== dc) return false;
+  return isPathClear(from,to);
+}
+
+function validateQueen(from,to){
+  const dr = Math.abs(to.r - from.r), dc = Math.abs(to.c - from.c);
+  if (dr === dc || dr === 0 || dc === 0) return isPathClear(from,to);
+  return false;
+}
+
+function validateKnight(dr,dc){
+  dr = Math.abs(dr); dc = Math.abs(dc);
+  return (dr === 2 && dc === 1) || (dr === 1 && dc === 2);
+}
+
+function validateKing(dr,dc){
+  return Math.abs(dr) <= 1 && Math.abs(dc) <= 1;
+}
+
+function isPathClear(from,to){
+  const dr = Math.sign(to.r - from.r), dc = Math.sign(to.c - from.c);
+  let r = from.r + dr, c = from.c + dc;
+  while (r !== to.r || c !== to.c){
+    if (boardState[r][c]) return false;
+    r += dr; c += dc;
+  }
+  return true;
+}
+
+// returns array of coords between from and to inclusive (useful for path visualization)
+function getPathCells(from,to){
+  const cells = [];
+  const piece = boardState[from.r][from.c];
+  // If moving a knight (jump), path is only destination
+  if (piece && piece.type === 'n') { cells.push({r:to.r,c:to.c}); return cells; }
+  const dr = Math.sign(to.r - from.r), dc = Math.sign(to.c - from.c);
+  let r = from.r + dr, c = from.c + dc;
+  while (true){
+    cells.push({r,c});
+    if (r === to.r && c === to.c) break;
+    r += dr; c += dc;
+    // safety break
+    if (cells.length > 20) break;
+  }
+  return cells;
+}
+
+// === AI logic ===
+function aiMove(){
+  if (turn !== 'b' || modeEl.value !== 'ai' || !turn) return;
+  thinking = true;
+  statusEl.textContent = 'Computer is thinking...';
+  setTimeout(()=> {
+    const moves = computeAllLegalMoves('b');
+    if (!moves.length){
+      statusEl.textContent = 'No legal moves for computer.';
+      thinking = false; return;
+    }
+    // prefer capture moves
+    const captureMoves = moves.filter(m => boardState[m.to.r][m.to.c]);
+    const chosen = (captureMoves.length ? captureMoves[Math.floor(Math.random()*captureMoves.length)] : moves[Math.floor(Math.random()*moves.length)]);
+    // highlight path briefly then perform move
+    highlightTempPathAndMove(chosen.from, chosen.to);
+  }, 300);
+}
+
+function computeAllLegalMoves(color){
+  const out = [];
+  for (let r=0;r<8;r++){
+    for (let c=0;c<8;c++){
+      const p = boardState[r][c];
+      if (!p || p.color !== color) continue;
+      for (let tr=0; tr<8; tr++){
+        for (let tc=0; tc<8; tc++){
+          if (r===tr && c===tc) continue;
+          if (isValidMove({r,c},{r:tr,c:tc}, color)) out.push({from:{r,c}, to:{r:tr,c:tc}});
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function highlightTempPathAndMove(from, to){
+  // Show temporary selection + destination + path
+  selected = from; render();
+  const destEl = boardEl.querySelector(`.cell[data-r="${to.r}"][data-c="${to.c}"]`);
+  if (destEl) {
+    destEl.classList.add('dest');
+    showPathPreview(from,to);
+  }
+  // perform move after short delay
+  setTimeout(()=> {
+    performMove(from,to);
+    clearPathPreview();
+    selected = null;
+    thinking = false;
+    render();
+  }, 550);
+}
+
+// utilities
+function resetBoard(){ initBoard(); }
+function flipBoard(){ flipped = !flipped; render(); }
+function showRules(){
+  alert(
+`Short rules:
+- Click your piece then destination to move.
+- Modes: 2-player (local) or Vs Computer (black).
+- Pawn promotion -> Queen automatically.
+- No castling or en-passant supported.
+- Capturing the king ends the game.
+Path preview: select a piece, hover a highlighted destination to see the path.`
+  );
+}
+
+// initialize
+initBoard();
+
+// If user switches mode while it's AI's turn, handle it
+modeEl.addEventListener('change', ()=>{
+  if (modeEl.value === 'ai' && turn === 'b' && !thinking){
+    // if currently black's turn, AI should move
+    setTimeout(aiMove, 200);
+  }
+});
+</script>
+
+</body>
+</html>

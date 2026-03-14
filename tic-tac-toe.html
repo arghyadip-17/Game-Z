@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<!-- gz --><title>Tic-Tac-Toe — Game-z</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap');
+  :root{
+    --bg:#07080f;--surface:#0d1117;--card:#111722;--border:#1e2a3a;
+    --accent:#00e5ff;--accent2:#ff3cac;--accent3:#f7c948;
+    --text:#e8f0fe;--muted:#6b7a99;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* NAV BAR */
+  .gz-nav {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 60px;
+    background: rgba(7,8,15,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    flex-shrink: 0;
+  }
+  .gz-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+  }
+  .gz-back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--muted); text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    transition: color 0.2s;
+    border: 1px solid var(--border);
+    padding: 6px 16px; border-radius: 100px;
+  }
+  .gz-back:hover { color: var(--accent); border-color: rgba(0,229,255,0.4); }
+  .gz-back::before { content: '←'; font-size: 14px; }
+  .gz-game-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 2px; color: var(--text);
+  }
+  /* GAME WRAP */
+  .gz-wrap {
+    width: 100%; max-width: 1000px;
+    padding: 28px 24px 40px;
+    display: flex; flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+  /* BUTTON STYLE */
+  .gz-btn {
+    padding: 9px 22px; border-radius: 100px; border: none;
+    background: linear-gradient(135deg, var(--accent) 0%, #0090b5 100%);
+    color: #000; font-weight: 700; font-size: 13px;
+    cursor: pointer; letter-spacing: 0.5px;
+    font-family: 'Outfit', sans-serif;
+    transition: box-shadow 0.2s, transform 0.15s;
+  }
+  .gz-btn:hover { box-shadow: 0 0 20px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  .gz-btn-ghost {
+    padding: 9px 22px; border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .gz-btn-ghost:hover { border-color: rgba(0,229,255,0.4); color: var(--accent); }
+  /* SCORE / HUD */
+  .gz-hud {
+    display: flex; gap: 16px; align-items: center;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 100px; padding: 8px 24px;
+    margin-bottom: 20px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .gz-hud-item { font-size: 14px; font-weight: 600; }
+  .gz-hud-item span { color: var(--accent); }
+  /* CONTROLS BAR */
+  .gz-controls {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    justify-content: center; margin-top: 16px;
+  }
+  /* SELECT */
+  select {
+    padding: 8px 14px; border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--card); color: var(--text);
+    font-family: 'Outfit', sans-serif; font-size: 13px;
+    cursor: pointer;
+  }
+  /* HINT */
+  .gz-hint {
+    margin-top: 12px;
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 0.5px; text-align: center;
+  }
+  /* CANVAS */
+  canvas {
+    border-radius: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+    display: block;
+  }
+  /* BACKGROUND */
+  .gz-bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+/* ── GAME STYLES ── */
+
+  /* ── Game-Z Global Overrides ── */
+  body {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    font-family: 'Outfit', system-ui, sans-serif !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  button {
+    font-family: 'Outfit', system-ui, sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  button:not([class]) {
+    padding: 9px 22px; border-radius: 100px; border: none;
+    background: linear-gradient(135deg, #00e5ff 0%, #0090b5 100%);
+    color: #000; font-weight: 700; font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  button:not([class]):hover { box-shadow: 0 0 20px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  input[type="number"], input[type="text"] {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+  select {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 100px;
+    padding: 8px 14px;
+    font-family: 'Outfit', system-ui, sans-serif;
+    cursor: pointer;
+  }
+  /* Fix body padding for individual game pages */
+  body > *:not(.gz-bg-grid):not(.gz-nav) { position: relative; z-index: 1; }
+
+
+  body{font-family:system-ui,Segoe UI,Roboto,Arial;background:#061126;color:#e6eef8;display:flex;flex-direction:column;align-items:center;padding:24px}
+  h1{color:#7dd3fc;margin-bottom:8px}
+  .controls{margin-bottom:12px;display:flex;gap:8px;align-items:center}
+  .board{display:grid;grid-template-columns:repeat(3,100px);grid-template-rows:repeat(3,100px);gap:8px}
+  .cell{width:100px;height:100px;background:#08203a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer;user-select:none}
+  .status{margin-top:12px}
+  button{padding:8px 10px;border-radius:8px;border:none;background:#0369a1;color:white;cursor:pointer}
+  select,input{padding:6px;border-radius:6px;border:1px solid #123}
+</style>
+</head>
+<body>
+
+  <div class="gz-bg-grid"></div>
+  <nav class="gz-nav">
+    <a href="../index.html" class="gz-logo">Game‑Z</a>
+    <span class="gz-game-title">Tic-Tac-Toe</span>
+    <a href="../index.html" class="gz-back">All Games</a>
+  </nav>
+
+  <h1 style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;color:var(--accent);margin:20px 0 12px">Tic-Tac-Toe</h1>
+
+  <div class="controls">
+    <label>Mode:
+      <select id="mode">
+        <option value="2p">2 Player (local)</option>
+        <option value="ai">Vs Computer (random)</option>
+      </select>
+    </label>
+    <button id="restart">Restart</button>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="status" id="status">Turn: X</div>
+
+<script>
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
+  const modeEl = document.getElementById('mode');
+  const restartBtn = document.getElementById('restart');
+
+  let board;
+  let turn; // 'X' or 'O'
+  let over;
+
+  function init() {
+    board = Array(9).fill('');
+    turn = 'X';
+    over = false;
+    renderBoard();
+    statusEl.textContent = "Turn: " + turn;
+  }
+
+  function renderBoard(){
+    boardEl.innerHTML = '';
+    board.forEach((cell, idx) => {
+      const div = document.createElement('div');
+      div.className = 'cell';
+      div.dataset.idx = idx;
+      div.textContent = cell;
+      div.addEventListener('click', onCellClick);
+      boardEl.appendChild(div);
+    });
+  }
+
+  function onCellClick(e){
+    const idx = Number(e.currentTarget.dataset.idx);
+    if (over || board[idx]) return;
+    makeMove(idx, turn);
+    if (over) return;
+    if (modeEl.value === 'ai' && turn === 'O' && !over){
+      // simple random AI: pick a random empty cell
+      const empties = board.map((v,i)=> v?null:i).filter(x=>x!==null);
+      if (empties.length){
+        const choice = empties[Math.floor(Math.random()*empties.length)];
+        setTimeout(()=> makeMove(choice, 'O'), 350);
+      }
+    }
+  }
+
+  function makeMove(idx, player){
+    if (board[idx] || over) return;
+    board[idx] = player;
+    updateBoardUI();
+    const winner = checkWinner();
+    if (winner){
+      over = true;
+      statusEl.textContent = (winner === 'draw') ? "It's a draw!" : `${winner} wins!`;
+      return;
+    }
+    turn = (player === 'X') ? 'O' : 'X';
+    statusEl.textContent = "Turn: " + turn;
+  }
+
+  function updateBoardUI(){
+    boardEl.querySelectorAll('.cell').forEach((el)=>{
+      const i = Number(el.dataset.idx);
+      el.textContent = board[i];
+    });
+  }
+
+  function checkWinner(){
+    const lines = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+    for (const [a,b,c] of lines){
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
+    }
+    if (board.every(x=>x)) return 'draw';
+    return null;
+  }
+
+  restartBtn.addEventListener('click', init);
+
+  // When switching mode: if AI mode and O starts, allow AI to move after restart
+  modeEl.addEventListener('change', ()=> {
+    // restart with X first always; user can choose to swap by playing differently
+    init();
+    if (modeEl.value === 'ai' && turn === 'O'){
+      // if you ever want computer to start first, we could add option; current: X starts.
+    }
+  });
+
+  init();
+</script>
+</body>
+</html>

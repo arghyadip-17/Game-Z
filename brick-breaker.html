@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- gz --><title>Brick Breaker — Game-Z</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap');
+  :root{
+    --bg:#07080f;--surface:#0d1117;--card:#111722;--border:#1e2a3a;
+    --accent:#00e5ff;--accent2:#ff3cac;--accent3:#f7c948;
+    --text:#e8f0fe;--muted:#6b7a99;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* NAV BAR */
+  .gz-nav {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 60px;
+    background: rgba(7,8,15,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    flex-shrink: 0;
+  }
+  .gz-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+  }
+  .gz-back {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--muted); text-decoration: none;
+    font-size: 13px; font-weight: 500;
+    transition: color 0.2s;
+    border: 1px solid var(--border);
+    padding: 6px 16px; border-radius: 100px;
+  }
+  .gz-back:hover { color: var(--accent); border-color: rgba(0,229,255,0.4); }
+  .gz-back::before { content: '←'; font-size: 14px; }
+  .gz-game-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px; letter-spacing: 2px; color: var(--text);
+  }
+  /* GAME WRAP */
+  .gz-wrap {
+    width: 100%; max-width: 1000px;
+    padding: 28px 24px 40px;
+    display: flex; flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+  /* BUTTON STYLE */
+  .gz-btn {
+    padding: 9px 22px; border-radius: 100px; border: none;
+    background: linear-gradient(135deg, var(--accent) 0%, #0090b5 100%);
+    color: #000; font-weight: 700; font-size: 13px;
+    cursor: pointer; letter-spacing: 0.5px;
+    font-family: 'Outfit', sans-serif;
+    transition: box-shadow 0.2s, transform 0.15s;
+  }
+  .gz-btn:hover { box-shadow: 0 0 20px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  .gz-btn-ghost {
+    padding: 9px 22px; border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .gz-btn-ghost:hover { border-color: rgba(0,229,255,0.4); color: var(--accent); }
+  /* SCORE / HUD */
+  .gz-hud {
+    display: flex; gap: 16px; align-items: center;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 100px; padding: 8px 24px;
+    margin-bottom: 20px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .gz-hud-item { font-size: 14px; font-weight: 600; }
+  .gz-hud-item span { color: var(--accent); }
+  /* CONTROLS BAR */
+  .gz-controls {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    justify-content: center; margin-top: 16px;
+  }
+  /* SELECT */
+  select {
+    padding: 8px 14px; border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--card); color: var(--text);
+    font-family: 'Outfit', sans-serif; font-size: 13px;
+    cursor: pointer;
+  }
+  /* HINT */
+  .gz-hint {
+    margin-top: 12px;
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 0.5px; text-align: center;
+  }
+  /* CANVAS */
+  canvas {
+    border-radius: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+    display: block;
+  }
+  /* BACKGROUND */
+  .gz-bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+/* ── GAME STYLES ── */
+
+  /* ── Game-Z Global Overrides ── */
+  body {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    font-family: 'Outfit', system-ui, sans-serif !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  button {
+    font-family: 'Outfit', system-ui, sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  button:not([class]) {
+    padding: 9px 22px; border-radius: 100px; border: none;
+    background: linear-gradient(135deg, #00e5ff 0%, #0090b5 100%);
+    color: #000; font-weight: 700; font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  button:not([class]):hover { box-shadow: 0 0 20px rgba(0,229,255,0.4); transform: translateY(-1px); }
+  input[type="number"], input[type="text"] {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+  select {
+    background: var(--card) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 100px;
+    padding: 8px 14px;
+    font-family: 'Outfit', system-ui, sans-serif;
+    cursor: pointer;
+  }
+  /* Fix body padding for individual game pages */
+  body > *:not(.gz-bg-grid):not(.gz-nav) { position: relative; z-index: 1; }
+
+
+  :root{--bg:#061126;--panel:#071827;--accent:#0ea5e9;--muted:#9fb3c8}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#e6eef8;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:18px}
+  h1{color:#7dd3fc;margin:8px 0}
+  .wrap{width:100%;max-width:900px;display:flex;flex-direction:column;align-items:center}
+  canvas{background:linear-gradient(180deg,#071827,#041421);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:block}
+  .controls{margin-top:12px;display:flex;gap:8px;align-items:center}
+  button{padding:8px 12px;border-radius:8px;border:none;background:#0369a1;color:white;cursor:pointer} /* compat */
+  .hud{margin-top:8px;color:var(--muted);font-weight:600}
+  .hint{color:#9fb3c8;font-size:13px;margin-top:6px}
+  @media (max-width:520px){ canvas{width:100%} }
+</style>
+</head>
+<body>
+
+  <div class="gz-bg-grid"></div>
+  <nav class="gz-nav">
+    <a href="../index.html" class="gz-logo">Game‑Z</a>
+    <span class="gz-game-title">Brick Breaker</span>
+    <a href="../index.html" class="gz-back">All Games</a>
+  </nav>
+
+  <div class="wrap gz-wrap">
+    <h1 style="font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;color:var(--accent);margin-bottom:16px">Brick Breaker</h1>
+    <canvas id="game" width="860" height="520" aria-label="Brick breaker game"></canvas>
+
+    <div class="controls">
+      <button id="startBtn">Start / Resume</button>
+      <button id="restartBtn">Restart</button>
+      <div style="width:12px"></div>
+      <div class="hud" id="hud">Score: 0 &nbsp;|&nbsp; Lives: 3 &nbsp;|&nbsp; Level: 1</div>
+    </div>
+    <div class="hint">Controls: Move mouse / drag finger to move paddle. Press space to pause.</div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const startBtn = document.getElementById('startBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const hud = document.getElementById('hud');
+
+  // sizing
+  function fitCanvas() {
+    const ratio = canvas.width / canvas.height;
+    const maxW = Math.min(window.innerWidth - 36, 900);
+    canvas.style.width = maxW + 'px';
+    canvas.style.height = Math.round(maxW / ratio) + 'px';
+  }
+  window.addEventListener('resize', fitCanvas);
+  fitCanvas();
+
+  // game state
+  let paddle = { w: 120, h: 14, x: (canvas.width - 120) / 2, y: canvas.height - 36, speed: 0 };
+  let ball = { x: canvas.width/2, y: canvas.height/2, r:10, vx:5, vy:-5 };
+  let bricks = [];
+  let rows = 5, cols = 10, brickW = 70, brickH = 22, brickGap = 8, topMargin = 60;
+  let score = 0, lives = 3, level = 1;
+  let running = false, paused = false;
+  let keys = {};
+  let animationFrame = null;
+
+  // helpers
+  function resetLevel(newLevel = 1) {
+    level = newLevel;
+    rows = Math.min(6, 4 + Math.floor((level-1)/1)); // gradually add rows
+    cols = Math.min(12, 8 + Math.floor((level-1)/2));
+    brickW = Math.max(48, Math.floor((canvas.width - 60 - brickGap*(cols-1)) / cols));
+    brickH = 20;
+    topMargin = 60;
+    buildBricks();
+    paddle.w = Math.max(70, 120 - (level-1)*6);
+    paddle.x = (canvas.width - paddle.w) / 2;
+    paddle.y = canvas.height - 36;
+    ball.x = canvas.width/2; ball.y = paddle.y - 20;
+    // increase ball speed slightly with level
+    const base = 5 + (level-1)*0.6;
+    ball.vx = (Math.random() > 0.5 ? 1 : -1) * base;
+    ball.vy = -Math.abs(base);
+  }
+
+  function buildBricks(){
+    bricks = [];
+    const offsetX = Math.round((canvas.width - (brickW*cols + brickGap*(cols-1)))/2);
+    for (let r=0;r<rows;r++){
+      for (let c=0;c<cols;c++){
+        const x = offsetX + c*(brickW + brickGap);
+        const y = topMargin + r*(brickH + 8);
+        const hits = (r < 1 ? 2 : 1); // top row stronger
+        bricks.push({x,y,w:brickW,h:brickH,alive:true,hits});
+      }
+    }
+  }
+
+  function drawRoundedRect(x,y,w,h,r=6,fill=true,stroke=false,strokeColor='#000'){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+    if (fill){ ctx.fill(); }
+    if (stroke){ ctx.strokeStyle = strokeColor; ctx.stroke(); }
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // background subtle gradient (already handled by CSS, but add vignette)
+    // draw paddle
+    ctx.fillStyle = '#26a69a';
+    drawRoundedRect(paddle.x, paddle.y, paddle.w, paddle.h, 8);
+    // draw ball
+    ctx.beginPath();
+    ctx.fillStyle = '#e6eef8';
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+    ctx.fill();
+    // draw bricks
+    bricks.forEach(b => {
+      if (!b.alive) return;
+      // color by row (derivative)
+      const hue = 200 - ((b.y - topMargin) / ((rows-1)*(brickH+8)))*120;
+      ctx.fillStyle = `hsl(${hue},70%,60%)`;
+      drawRoundedRect(b.x, b.y, b.w, b.h, 6);
+      // hits indicator
+      if (b.hits > 1) {
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.fillRect(b.x + b.w - 18, b.y + 4, 14, b.h - 8);
+      }
+    });
+    // HUD (top)
+    ctx.fillStyle = '#9fb3c8';
+    ctx.font = '14px system-ui';
+    ctx.fillText(`Score: ${score}`, 18, 24);
+    ctx.fillText(`Lives: ${lives}`, canvas.width - 110, 24);
+    ctx.fillText(`Level: ${level}`, canvas.width/2 - 24, 24);
+    if (paused) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(canvas.width/2 - 160, canvas.height/2 - 36, 320, 72);
+      ctx.fillStyle = '#e6eef8';
+      ctx.font = '20px system-ui';
+      ctx.fillText('PAUSED — Press Space or Start', canvas.width/2 - 150, canvas.height/2);
+    }
+    if (!running && !paused) {
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(canvas.width/2 - 160, canvas.height/2 - 50, 320, 100);
+      ctx.fillStyle = '#e6eef8';
+      ctx.font = '18px system-ui';
+      ctx.fillText('Click Start to play', canvas.width/2 - 70, canvas.height/2 - 10);
+    }
+  }
+
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+  function step() {
+    if (!running || paused) { draw(); animationFrame = requestAnimationFrame(step); return; }
+
+    // update paddle by mouse/touch speed (speed set by event handlers)
+    paddle.x += paddle.speed;
+    // friction
+    paddle.speed *= 0.8;
+    paddle.x = clamp(paddle.x, 8, canvas.width - paddle.w - 8);
+
+    // move ball
+    ball.x += ball.vx; ball.y += ball.vy;
+
+    // walls
+    if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx *= -1; }
+    if (ball.x + ball.r > canvas.width) { ball.x = canvas.width - ball.r; ball.vx *= -1; }
+    if (ball.y - ball.r < 34) { ball.y = 34 + ball.r; ball.vy *= -1; } // leave room for HUD
+
+    // paddle collision
+    if (ball.y + ball.r >= paddle.y && ball.y + ball.r <= paddle.y + paddle.h + 8 &&
+        ball.x >= paddle.x - 4 && ball.x <= paddle.x + paddle.w + 4 && ball.vy > 0) {
+      // reflect based on hit position
+      const relative = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
+      const speed = Math.min(12, Math.hypot(ball.vx, ball.vy) * 1.02);
+      ball.vx = relative * speed;
+      ball.vy = -Math.abs(Math.sqrt(Math.max(1, speed*speed - ball.vx*ball.vx)));
+      // nudge ball out to avoid stuck
+      ball.y = paddle.y - ball.r - 1;
+    }
+
+    // brick collisions
+    for (let b of bricks){
+      if (!b.alive) continue;
+      if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
+          ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
+        // basic collision resolution: determine side
+        const prevX = ball.x - ball.vx, prevY = ball.y - ball.vy;
+        const fromLeft = prevX <= b.x;
+        const fromRight = prevX >= b.x + b.w;
+        const fromTop = prevY <= b.y;
+        const fromBottom = prevY >= b.y + b.h;
+        if (fromLeft || fromRight) ball.vx *= -1;
+        else ball.vy *= -1;
+        b.hits--;
+        if (b.hits <= 0) { b.alive = false; score += 50; }
+        else { score += 20; }
+        break; // handle one brick per frame to avoid multiple reflections
+      }
+    }
+
+    // lose life
+    if (ball.y - ball.r > canvas.height) {
+      lives--;
+      if (lives <= 0) {
+        running = false;
+        paused = false;
+        setTimeout(()=> alert(`Game Over! Final score: ${score}`), 80);
+      } else {
+        // reset ball & paddle
+        ball.x = canvas.width/2; ball.y = paddle.y - 20;
+        ball.vx = (Math.random() > 0.5 ? 1 : -1) * (5 + level*0.6);
+        ball.vy = -Math.abs(5 + level*0.6);
+        paddle.x = (canvas.width - paddle.w)/2;
+      }
+    }
+
+    // check level clear
+    if (bricks.every(b => !b.alive)) {
+      // advance level
+      score += 200 * level;
+      resetLevel(level+1);
+      // small pause
+      paused = true;
+      setTimeout(()=> { paused = false; }, 700);
+    }
+
+    // update HUD
+    hud.textContent = `Score: ${score} | Lives: ${lives} | Level: ${level}`;
+
+    draw();
+    animationFrame = requestAnimationFrame(step);
+  }
+
+  // controls: mouse
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const scale = canvas.width / rect.width;
+    const x = (e.clientX - rect.left) * scale;
+    // set paddle center to x (smooth)
+    const target = x - paddle.w/2;
+    paddle.speed += (target - paddle.x) * 0.22;
+  });
+
+  // touch: drag
+  let lastTouchX = null;
+  canvas.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    if (!t) return;
+    const rect = canvas.getBoundingClientRect(), scale = canvas.width / rect.width;
+    lastTouchX = (t.clientX - rect.left) * scale;
+  }, {passive:true});
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    if (!t) return;
+    const rect = canvas.getBoundingClientRect(), scale = canvas.width / rect.width;
+    const x = (t.clientX - rect.left) * scale;
+    const delta = x - (lastTouchX === null ? x : lastTouchX);
+    paddle.speed += delta * 0.6;
+    lastTouchX = x;
+  }, {passive:false});
+  canvas.addEventListener('touchend', ()=> lastTouchX = null);
+
+  // keyboard
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') {
+      paused = !paused;
+    }
+    if (e.code === 'ArrowLeft') paddle.speed -= 6;
+    if (e.code === 'ArrowRight') paddle.speed += 6;
+    if (e.code === 'KeyP') paused = !paused;
+  });
+
+  startBtn.addEventListener('click', () => {
+    if (!running) { running = true; paused = false; }
+    if (!animationFrame) animationFrame = requestAnimationFrame(step);
+  });
+  restartBtn.addEventListener('click', () => {
+    score = 0; lives = 3; resetLevel(1); running = true; paused = false;
+    if (!animationFrame) animationFrame = requestAnimationFrame(step);
+  });
+
+  // initialize
+  score = 0; lives = 3; resetLevel(1);
+  draw();
+  // start loop but paused by default (user clicks Start)
+  animationFrame = requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>
