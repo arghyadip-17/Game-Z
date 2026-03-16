@@ -2,7 +2,7 @@
 
 **GAME-Z** is a browser-based mini gaming platform where users can play simple and fun games directly in their web browser without downloading anything.
 
-🌐 **Live Website:** https://game-z-blush.vercel.app/
+🌐 **Live Website:** https://game-z-web.vercel.app/
 
 ---
 
