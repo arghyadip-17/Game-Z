@@ -6,4 +6,84 @@
     <priority>1.0</priority>
   </url>
 
+  <url>
+    <loc>https://game-z-web.vercel.app/games/2048.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/brick-breaker.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/chess.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/connect-four.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/flappy-bird.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/hand-cricket.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/minesweeper.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/number-guess.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/pong.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/rps.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/simon-says.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/snake.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/tetris.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/tic-tac-toe.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/whack-a-mole.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://game-z-web.vercel.app/games/wordle.html</loc>
+    <priority>0.8</priority>
+  </url>
+
 </urlset>
